@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "372013689295",
+    "project_id": "routesnap-7261d",
+    "storage_bucket": "routesnap-7261d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:372013689295:android:dbb7a8675bd754eda28aba",
+        "android_client_info": {
+          "package_name": "com.routesnap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQny2DBx8hw1ydMh_HZF01rRmgqqkNKiA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

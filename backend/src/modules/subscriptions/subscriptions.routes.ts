@@ -1,16 +1,15 @@
 import { Router } from "express";
-import { requireAuth, type AuthenticatedRequest } from "../../common/auth.js";
-import { prisma } from "../../prisma/client.js";
+import { requireAuth, signToken, type AuthenticatedRequest } from "../../common/auth.js";
+import { db } from "../../firebase/admin.js";
+import type { UserDocument } from "../../firebase/types.js";
 
 export const subscriptionsRouter = Router();
 
 subscriptionsRouter.use(requireAuth);
 
 subscriptionsRouter.get("/status", async (req: AuthenticatedRequest, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user!.id },
-    select: { plan: true }
-  });
+  const userDoc = await db.collection("users").doc(req.user!.id).get();
+  const user = userDoc.data() as UserDocument | undefined;
 
   return res.json({
     plan: user?.plan ?? "FREE",
@@ -19,11 +18,15 @@ subscriptionsRouter.get("/status", async (req: AuthenticatedRequest, res) => {
 });
 
 subscriptionsRouter.post("/mock-vip", async (req: AuthenticatedRequest, res) => {
-  const user = await prisma.user.update({
-    where: { id: req.user!.id },
-    data: { plan: "VIP" },
-    select: { id: true, plan: true }
+  await db.collection("users").doc(req.user!.id).update({
+    plan: "VIP",
+    updatedAt: new Date().toISOString()
   });
 
-  return res.json({ ...user, isVip: true });
+  return res.json({
+    id: req.user!.id,
+    plan: "VIP",
+    isVip: true,
+    token: signToken({ id: req.user!.id, plan: "VIP" })
+  });
 });

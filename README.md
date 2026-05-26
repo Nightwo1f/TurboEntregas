@@ -47,10 +47,10 @@ Usuários VIP podem enviar até 50 fotos antes da análise final e gerar rotas c
 ### Backend
 
 - Node.js
-- NestJS ou Express
+- Express
 - TypeScript
-- PostgreSQL
-- Prisma ORM
+- Firebase Firestore
+- Firebase Admin SDK
 - JWT para autenticação
 - bcrypt para senha
 - Redis opcional para filas/cache
@@ -178,11 +178,9 @@ routesnap-app/
         ocr/
         routes/
         subscriptions/
-      prisma/
+      firebase/
       common/
       main.ts
-    prisma/
-      schema.prisma
 ```
 
 ## 6. Modelagem do banco
@@ -285,8 +283,8 @@ createdAt: Date;
 ### Etapa 2: Backend inicial
 
 - Criar API Node.js.
-- Configurar PostgreSQL.
-- Configurar Prisma.
+- Configurar Firebase Firestore.
+- Configurar Firebase Admin SDK.
 - Criar tabelas principais.
 - Criar autenticação JWT.
 - Criar cadastro e login.
@@ -423,12 +421,44 @@ POST /subscriptions/mock-vip
 ## 11. Variáveis de ambiente
 
 ```env
-DATABASE_URL=
 JWT_SECRET=
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+# FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
 GOOGLE_MAPS_API_KEY=
 OCR_PROVIDER=google_mlkit_or_vision
 STORAGE_PROVIDER=local_or_s3
+EXPO_PUBLIC_API_URL=
 ```
+
+### Configuração do Firebase
+
+1. Crie um projeto no Firebase Console.
+2. Ative o Cloud Firestore em modo de produção ou teste.
+3. Acesse Configurações do projeto > Contas de serviço.
+4. Gere uma nova chave privada do Firebase Admin SDK.
+5. Copie os campos `project_id`, `client_email` e `private_key` para o `.env`.
+6. Mantenha a chave privada somente no `.env`; nunca envie o arquivo de chave para o GitHub.
+
+O backend usa o Firebase Admin SDK em ambiente confiável de servidor. As regras do Firestore protegem acessos diretos do app, mas o Admin SDK bypassa essas regras; por isso todas as validações de usuário, plano e limite ficam na API.
+
+### Comandos Firebase
+
+```powershell
+npm run firebase:deploy:firestore
+npm run firebase:emulators
+```
+
+O projeto Firebase configurado é `routesnap-7261d`.
+
+Para rodar o emulador local do Firestore, o Firebase CLI atual exige JDK 21 ou superior. Se o comando falhar por versão de Java, instale um JDK 21+ e confirme com:
+
+```powershell
+java -version
+```
+
+As regras atuais bloqueiam acesso direto ao Firestore pelo app mobile. Isso é intencional: o mobile deve chamar a API, e a API acessa o Firestore com Firebase Admin SDK.
 
 ## 12. Observação sobre Waze
 
@@ -467,4 +497,3 @@ Outras opções:
 - RotaFlash
 - SnapRoute
 - RotaPin
-

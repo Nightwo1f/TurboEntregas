@@ -16,6 +16,8 @@ coverage/
 !.env.example
 mobile/.env
 backend/.env
+*service-account*.json
+*firebase-adminsdk*.json
 
 # Logs
 *.log
@@ -29,3 +31,4 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 !.vscode/extensions.json
+functions/lib/

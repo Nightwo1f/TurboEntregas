@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthenticatedRequest } from "../../common/auth.js";
-import { prisma } from "../../prisma/client.js";
+import { db } from "../../firebase/admin.js";
+import type { AddressDocument, RoutePlanDocument } from "../../firebase/types.js";
+import { withId } from "../../firebase/types.js";
 
 export const routesRouter = Router();
 
@@ -17,49 +19,50 @@ routesRouter.post("/plan", async (req: AuthenticatedRequest, res) => {
     .safeParse(req.body);
 
   if (!body.success) {
-    return res.status(400).json({ message: "Dados inválidos.", issues: body.error.issues });
+    return res.status(400).json({ message: "Dados invalidos.", issues: body.error.issues });
   }
 
-  const addresses = await prisma.address.findMany({
-    where: {
-      batchId: body.data.batchId,
-      isConfirmed: true
-    },
-    orderBy: { createdAt: "asc" }
-  });
+  const addressesSnapshot = await db
+    .collection("addresses")
+    .where("batchId", "==", body.data.batchId)
+    .where("userId", "==", req.user!.id)
+    .where("isConfirmed", "==", true)
+    .orderBy("createdAt", "asc")
+    .get();
+  const addresses = addressesSnapshot.docs.map((addressDoc) =>
+    withId(addressDoc.id, addressDoc.data() as AddressDocument)
+  );
 
-  const routePlan = await prisma.routePlan.create({
-    data: {
-      userId: req.user!.id,
-      batchId: body.data.batchId,
-      originLatitude: body.data.originLatitude,
-      originLongitude: body.data.originLongitude,
-      totalDistanceMeters: 0,
-      totalDurationSeconds: 0
-    }
-  });
+  const routePlanRef = db.collection("routePlans").doc();
+  const routePlan: RoutePlanDocument = {
+    userId: req.user!.id,
+    batchId: body.data.batchId,
+    originLatitude: body.data.originLatitude,
+    originLongitude: body.data.originLongitude,
+    totalDistanceMeters: 0,
+    totalDurationSeconds: 0,
+    createdAt: new Date().toISOString()
+  };
+
+  await routePlanRef.set(routePlan);
 
   return res.status(201).json({
-    routePlan,
-    stops: addresses.map((address: (typeof addresses)[number], index: number) => ({
+    routePlan: withId(routePlanRef.id, routePlan),
+    stops: addresses.map((address, index) => ({
       ...address,
       orderIndex: index
     })),
-    message: "Otimização via Google Routes API pendente."
+    message: "Otimizacao via Google Routes API pendente."
   });
 });
 
 routesRouter.get("/:id", async (req: AuthenticatedRequest, res) => {
-  const route = await prisma.routePlan.findFirst({
-    where: {
-      id: req.params.id,
-      userId: req.user!.id
-    }
-  });
+  const routeDoc = await db.collection("routePlans").doc(req.params.id).get();
+  const route = routeDoc.data() as RoutePlanDocument | undefined;
 
-  if (!route) {
-    return res.status(404).json({ message: "Rota não encontrada." });
+  if (!routeDoc.exists || !route || route.userId !== req.user!.id) {
+    return res.status(404).json({ message: "Rota nao encontrada." });
   }
 
-  return res.json(route);
+  return res.json(withId(routeDoc.id, route));
 });
