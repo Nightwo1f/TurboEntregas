@@ -1,11 +1,12 @@
 import { Router } from "express";
+import { asyncHandler } from "../../common/asyncHandler.js";
 import { requireAuth, type AuthenticatedRequest } from "../../common/auth.js";
 import { db } from "../../firebase/admin.js";
 import type { UserDocument } from "../../firebase/types.js";
 
 export const usersRouter = Router();
 
-usersRouter.get("/me", requireAuth, async (req: AuthenticatedRequest, res) => {
+usersRouter.get("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res) => {
   const userDoc = await db.collection("users").doc(req.user!.id).get();
 
   if (!userDoc.exists) {
@@ -23,4 +24,4 @@ usersRouter.get("/me", requireAuth, async (req: AuthenticatedRequest, res) => {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   });
-});
+}));

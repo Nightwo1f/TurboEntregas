@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { asyncHandler } from "../../common/asyncHandler.js";
 import { requireAuth, type AuthenticatedRequest } from "../../common/auth.js";
 import { getPlanPhotoLimit } from "../../common/limits.js";
 import { db } from "../../firebase/admin.js";
@@ -10,7 +11,7 @@ export const batchesRouter = Router();
 
 batchesRouter.use(requireAuth);
 
-batchesRouter.post("/", async (req: AuthenticatedRequest, res) => {
+batchesRouter.post("/", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const plan = await getCurrentUserPlan(req.user!.id);
   const maxPhotos = getPlanPhotoLimit(plan);
   const now = new Date().toISOString();
@@ -26,9 +27,9 @@ batchesRouter.post("/", async (req: AuthenticatedRequest, res) => {
   await batchRef.set(batch);
 
   return res.status(201).json(withId(batchRef.id, batch));
-});
+}));
 
-batchesRouter.get("/open", async (req: AuthenticatedRequest, res) => {
+batchesRouter.get("/open", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const batchSnapshot = await db
     .collection("photoBatches")
     .where("userId", "==", req.user!.id)
@@ -48,9 +49,9 @@ batchesRouter.get("/open", async (req: AuthenticatedRequest, res) => {
     ...(batchDoc.data() as PhotoBatchDocument),
     photos
   });
-});
+}));
 
-batchesRouter.post("/:id/photos", async (req: AuthenticatedRequest, res) => {
+batchesRouter.post("/:id/photos", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const body = z.object({ imageUrl: z.string().min(1) }).safeParse(req.body);
 
   if (!body.success) {
@@ -81,9 +82,9 @@ batchesRouter.post("/:id/photos", async (req: AuthenticatedRequest, res) => {
   await photoRef.set(photo);
 
   return res.status(201).json(withId(photoRef.id, photo));
-});
+}));
 
-batchesRouter.get("/:id/photos", async (req: AuthenticatedRequest, res) => {
+batchesRouter.get("/:id/photos", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const batchDoc = await db.collection("photoBatches").doc(req.params.id).get();
   const batch = batchDoc.data() as PhotoBatchDocument | undefined;
 
@@ -92,9 +93,9 @@ batchesRouter.get("/:id/photos", async (req: AuthenticatedRequest, res) => {
   }
 
   return res.json(await getBatchPhotos(batchDoc.id, req.user!.id));
-});
+}));
 
-batchesRouter.post("/:id/finalize", async (req: AuthenticatedRequest, res) => {
+batchesRouter.post("/:id/finalize", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const batchRef = db.collection("photoBatches").doc(req.params.id);
   const batchDoc = await batchRef.get();
   const batch = batchDoc.data() as PhotoBatchDocument | undefined;
@@ -126,7 +127,7 @@ batchesRouter.post("/:id/finalize", async (req: AuthenticatedRequest, res) => {
     batch: withId(batchDoc.id, updatedBatch),
     message: "Lote enviado para OCR. Integracao real pendente."
   });
-});
+}));
 
 async function getBatchPhotos(batchId: string, userId: string) {
   const photosSnapshot = await db

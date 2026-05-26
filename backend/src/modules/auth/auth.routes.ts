@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { Router } from "express";
 import { z } from "zod";
+import { asyncHandler } from "../../common/asyncHandler.js";
 import { signToken } from "../../common/auth.js";
 import { db } from "../../firebase/admin.js";
 import type { UserDocument } from "../../firebase/types.js";
@@ -13,7 +14,7 @@ const credentialsSchema = z.object({
   password: z.string().min(6)
 });
 
-authRouter.post("/register", async (req, res) => {
+authRouter.post("/register", asyncHandler(async (req, res) => {
   const body = credentialsSchema
     .extend({
       name: z.string().min(2)
@@ -54,9 +55,9 @@ authRouter.post("/register", async (req, res) => {
     token: signToken({ id: userRef.id, plan: user.plan }),
     user: sanitizeUser(withId(userRef.id, user))
   });
-});
+}));
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", asyncHandler(async (req, res) => {
   const body = credentialsSchema.safeParse(req.body);
 
   if (!body.success) {
@@ -80,7 +81,7 @@ authRouter.post("/login", async (req, res) => {
     token: signToken({ id: userDoc.id, plan: user.plan }),
     user: sanitizeUser(withId(userDoc.id, user))
   });
-});
+}));
 
 function sanitizeUser(user: { id: string; name: string; email: string; plan: "FREE" | "VIP" }) {
   return {

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { asyncHandler } from "../../common/asyncHandler.js";
 import { requireAuth, type AuthenticatedRequest } from "../../common/auth.js";
 import { db } from "../../firebase/admin.js";
 import type { AddressDocument, RoutePlanDocument } from "../../firebase/types.js";
@@ -9,7 +10,7 @@ export const routesRouter = Router();
 
 routesRouter.use(requireAuth);
 
-routesRouter.post("/plan", async (req: AuthenticatedRequest, res) => {
+routesRouter.post("/plan", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const body = z
     .object({
       batchId: z.string(),
@@ -54,9 +55,9 @@ routesRouter.post("/plan", async (req: AuthenticatedRequest, res) => {
     })),
     message: "Otimizacao via Google Routes API pendente."
   });
-});
+}));
 
-routesRouter.get("/:id", async (req: AuthenticatedRequest, res) => {
+routesRouter.get("/:id", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const routeDoc = await db.collection("routePlans").doc(req.params.id).get();
   const route = routeDoc.data() as RoutePlanDocument | undefined;
 
@@ -65,4 +66,4 @@ routesRouter.get("/:id", async (req: AuthenticatedRequest, res) => {
   }
 
   return res.json(withId(routeDoc.id, route));
-});
+}));

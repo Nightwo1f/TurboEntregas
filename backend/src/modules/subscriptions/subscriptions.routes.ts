@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { asyncHandler } from "../../common/asyncHandler.js";
 import { requireAuth, signToken, type AuthenticatedRequest } from "../../common/auth.js";
 import { db } from "../../firebase/admin.js";
 import type { UserDocument } from "../../firebase/types.js";
@@ -7,7 +8,7 @@ export const subscriptionsRouter = Router();
 
 subscriptionsRouter.use(requireAuth);
 
-subscriptionsRouter.get("/status", async (req: AuthenticatedRequest, res) => {
+subscriptionsRouter.get("/status", asyncHandler(async (req: AuthenticatedRequest, res) => {
   const userDoc = await db.collection("users").doc(req.user!.id).get();
   const user = userDoc.data() as UserDocument | undefined;
 
@@ -15,9 +16,9 @@ subscriptionsRouter.get("/status", async (req: AuthenticatedRequest, res) => {
     plan: user?.plan ?? "FREE",
     isVip: user?.plan === "VIP"
   });
-});
+}));
 
-subscriptionsRouter.post("/mock-vip", async (req: AuthenticatedRequest, res) => {
+subscriptionsRouter.post("/mock-vip", asyncHandler(async (req: AuthenticatedRequest, res) => {
   await db.collection("users").doc(req.user!.id).update({
     plan: "VIP",
     updatedAt: new Date().toISOString()
@@ -29,4 +30,4 @@ subscriptionsRouter.post("/mock-vip", async (req: AuthenticatedRequest, res) => 
     isVip: true,
     token: signToken({ id: req.user!.id, plan: "VIP" })
   });
-});
+}));

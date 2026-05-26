@@ -1,6 +1,7 @@
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
+import { errorHandler } from "./common/errors.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { batchesRouter } from "./modules/batches/batches.routes.js";
 import { routesRouter } from "./modules/routes/routes.routes.js";
@@ -22,6 +23,7 @@ app.use("/users", usersRouter);
 app.use("/batches", batchesRouter);
 app.use("/routes", routesRouter);
 app.use("/subscriptions", subscriptionsRouter);
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`RouteSnap API listening on http://localhost:${port}`);
